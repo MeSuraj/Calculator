@@ -2,7 +2,6 @@ package learn.zero.say.calculator;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -14,20 +13,21 @@ import org.mozilla.javascript.Scriptable;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    TextView solution_tv, result_tv;
-    MaterialButton btn_ac, btn_c, btn_percentage, btn_divide, btn_multiply, btn_subtract, btn_add, btn_equal, btn_point;
-    MaterialButton btn_00, btn_0, btn_1, btn_2, btn_3, btn_4, btn_5,btn_6, btn_7, btn_8, btn_9;
+    TextView input_tv, output_tv;
+    MaterialButton btn_ac, btn_c, btn_percentage, btn_divide, btn_multiply, btn_subtract, btn_add,
+                    btn_equal, btn_point,btn_bracket;
+    MaterialButton  btn_0, btn_1, btn_2, btn_3, btn_4, btn_5,btn_6, btn_7, btn_8, btn_9;
 
-    String data;
+    boolean checkBracket = false;
 
-    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        solution_tv = findViewById(R.id.solution_tv);
-        result_tv = findViewById(R.id.result_tv);
+        input_tv = findViewById(R.id.input_tv);
+        output_tv = findViewById(R.id.output_tv);
+        btn_bracket = findViewById(R.id.btn_bracket);
 
         assignId(btn_c,R.id.btn_c);
         assignId(btn_ac,R.id.btn_ac);
@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         assignId(btn_equal,R.id.btn_equal);
         assignId(btn_point,R.id.btn_point);
 
-        assignId(btn_00,R.id.btn_00);
         assignId(btn_0,R.id.btn_0);
         assignId(btn_1,R.id.btn_1);
         assignId(btn_2,R.id.btn_2);
@@ -64,19 +63,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View view) {
         MaterialButton button = (MaterialButton) view;
         String buttonText = button.getText().toString();
-        String data = solution_tv.getText().toString();
+        String data = input_tv.getText().toString();
 
         if (buttonText.equals("AC")){
-            solution_tv.setText("");
-            result_tv.setText("");
+            input_tv.setText("");
+            output_tv.setText("");
             return;
         }
         if (buttonText.equals("=")){
-            solution_tv.setText(result_tv.getText());
+            input_tv.setText(output_tv.getText());
+            data = data.replace("×" , "*");
+            data = data.replace("÷" , "/");
             return;
 
         }
-        if (buttonText.equals("C")){
+        if (buttonText.equals("\u232b")){
             data = data.substring(0, data.length()-1);
 
         }
@@ -84,29 +85,50 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             data = data+buttonText;
         }
 
-        solution_tv.setText(data);
+        btn_bracket.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String process;
+                if (checkBracket)
+                {
+                    process = input_tv.getText().toString();
+                    input_tv.setText(process + ")");
+                    checkBracket = false;
+                }else
+                {
+                    process = input_tv.getText().toString();
+                    input_tv.setText(process + "(");
+                    checkBracket = true;
+                }
+            }
+        });
+
+        input_tv.setText(data);
 
         String finalResult = getResult(data);
-        if (!finalResult.equals("Err")){
-            result_tv.setText(finalResult);
+        if (!finalResult.equals("Error")){
+            output_tv.setText(finalResult);
         }
     }
+
 
     String getResult(String data){
         try{
             Context context = Context.enter();
             context.setOptimizationLevel(-1);
             Scriptable scriptable = context.initStandardObjects();
-            String finalResult = context.evaluateString (scriptable,data,"Javascript", 1,null).toString();
+            String finalResult = context.evaluateString
+                    (scriptable,data,"Javascript", 1,null).toString();
             if (finalResult.endsWith(".0")){
                 finalResult = finalResult.replace(".0", "");
             }
             return finalResult;
         }catch (Exception e){
-            return "Err";
+            return "Error";
         }
 
     }
+
 
 
 }
